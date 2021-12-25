@@ -1,0 +1,90 @@
+#!/usr/local/bin/python
+# -*- coding: utf-8 -*-
+# Pioneer robot sonar visualization
+
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+from time import sleep
+from drive import RosAriaDriver
+
+# TODO:
+# Enter robot number as a ROS topic node prefix
+robot=RosAriaDriver('/PIONIER6')
+
+loop_count=25  # drawing iterations
+beam_half_angle=7.5 # haf of sonar angular beam width
+
+# 
+# A function to calculate Cartesian coordinates to polar
+#  result: a tuple (rho,phi)
+#  rho - radius, phi - angle in degrees
+def cart2pol(x, y):
+    #TODO: calculations
+    rho = np.sqrt(x*x+y*y)
+    phi = math.degrees(math.atan2(y, x))
+    return(rho, phi)
+
+# A function to transform polar  coordinates to Cartesian
+# input angle in degrees
+# returns a tuple (x,y)
+def pol2cart(rho, phi):
+    #TODO: calculations
+    x = cos(phi) * rho
+    y = sin(phi) * rho
+    return(x, y)
+
+# plotting data
+def plotsonars(ax,sonarreads):
+    pol=[cart2pol(x[0],x[1]) for x in sonarreads ]
+    for item in pol:
+        #print item[0],item[1]
+        wedge = mpatches.Wedge([0,0], item[0], item[1]-beam_half_angle, item[1]+beam_half_angle, alpha=0.4, ec="black",fc="CornflowerBlue")
+        ax.add_patch(wedge)
+
+def plotarrows(ax,arrlist):
+    y=[[0,0]+x for x in arrlist ]
+    soa =np.array(y) 
+    X,Y,U,V = zip(*soa)
+    ax.quiver(X,Y,U,V,angles='xy',scale_units='xy',scale=1)
+
+fig1 = plt.figure()
+ax = fig1.gca()
+ax.set_aspect('equal')
+ax.set_xlim([-6,6])
+ax.set_ylim([-6,6])
+plt.ion()
+plt.show()
+
+fig2 = plt.figure()
+bx = fig2.add_axes([0.1,0.1,0.8,0.8],polar=True)
+x = np.arange(0,512)
+theta = (np.pi/512 )*x  # angle in rad 
+
+skan_sonar =robot.ReadSonar()
+skan_laser =robot.ReadLaser()
+print(skan_sonar)
+print("XDDDDD")
+print(skan_laser)
+
+for i in range(loop_count):
+    skan_sonar =robot.ReadSonar()
+    skan_laser =robot.ReadLaser()
+    #print skan
+    ax.cla()
+    plotsonars(ax,skan_sonar)  
+    plotarrows(ax,skan_sonar)
+    ax.set_xlim([-6,6])
+    ax.set_ylim([-6,6])
+    fig1.show()
+    
+    bx.cla()
+    bx.plot(theta,skan_laser,lw=2.5)
+    bx.set_ylim(0,2)  # distance range
+    fig2.show()
+    
+    plt.pause(0.0001)
+    sleep(0.2)
+
