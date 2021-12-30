@@ -23,8 +23,8 @@ def lines2Points(lines):	# Nie pokazuje pierwszej lini !!
 		B =	[[-b1],
 			 [-b2]]
 		C = np.linalg.inv(A).dot(B)
-		X.append(C[0])
-		Y.append(C[1])
+		X.append(C[0][0])
+		Y.append(C[1][0])
 	return [X,Y]
 		
 def points2Lines(X, Y, buf):
@@ -66,7 +66,21 @@ def sonar2Points(data):
 			#print(data[p])
 	return X,Y
 
-def filterLines(lines, sens):
+def filterLines(lines, step, max):
+	filter_val = 0
+
+	while filter_val < max:
+		filter_val += step
+		if filter_val > max: filter_val = max
+		while True:
+			# Filter lines unless nothing can be filterred using these filter_val
+			old_count = len(lines)
+			lines = filterLinesCore(lines, filter_val)
+			#print("reduced: " + str(old_count - len(lines)) + " deg: " + str(filter_val))
+			if old_count == len(lines): break
+	return lines
+
+def filterLinesCore(lines, sens):
 	new_lines = []
 	old_count = len(lines)
 	while True:
@@ -104,8 +118,6 @@ def filterLines(lines, sens):
 		if len(lines) <= 2:
 			while len(lines) > 0:
 				new_lines.append(lines.pop(0))
-			if old_count > len(new_lines):
-				new_lines = filterLines(new_lines, sens)
 			return new_lines
 		#print("x2: " + str(x))
 		#input("")
@@ -113,32 +125,51 @@ def filterLines(lines, sens):
 ###################################################################################
 # BEGIN
 ###################################################################################
-poly_points = 4		# GOLDEN VALUES = 4 AND 17
-filtr_deg 	= 45/2
+poly_points 	= 4	
+poly_points_2 	= 3
+filtr_step 		= 1
+filtr_deg 		= 10
+filtr_deg_2 	= 20
 
 fig2 = plt.figure()
 ax2 = fig2.gca()
 
-json_data = open('box.json')
+# READ JSON FILE
+json_data = open('wall.json')
 data = json.load(json_data)
 
+# GENERATE POINTS IN CARTESIANPLANE
 x = np.arange(0,512)
 theta = (np.pi/512 )*x  # theta - scan angles in [rad]
 X,Y = sonar2Points(data)
 print("Ilosc wczytanych punktów: " + str(len(X)))
 
+# GENERATE LINES USING POLYFIT
 lines = points2Lines(X, Y, poly_points) 
 print("Ilosc lini surowych: " + str(len(lines)))
-
 pol_X, pol_Y = lines2Points(lines)
-lines = filterLines(lines, filtr_deg)
-print("Ilosc lini po filtracji [deg=" + str(filtr_deg) + "] : " + str(len(lines)))
 
+# LINES FILTRATION
+lines = filterLines(lines, filtr_step, filtr_deg)
+print("Ilosc lini po filtracji [deg=" + str(filtr_deg) + "] : " + str(len(lines)))
 new_X, new_Y = lines2Points(lines)
 
+# SECOND GENERATION LINES USING POLYFIT
+lines = points2Lines(new_X, new_Y, poly_points_2) 
+new_pol_X, new_pol_Y = lines2Points(lines)
+
+# SECOND LINES FILTRATION
+lines = filterLines(lines, filtr_step, filtr_deg_2)
+new_new_X, new_new_Y = lines2Points(lines)
+print("Ilosc lini po filtracji [deg=" + str(filtr_deg_2) + "] : " + str(len(lines)))
+
 line, = ax2.plot(X,Y,'.')
-line, = ax2.plot(pol_X,pol_Y)
-line, = ax2.plot(new_X,new_Y)
+# line, = ax2.plot(pol_X,pol_Y)
+# line, = ax2.plot(new_X,new_Y)
+# line, = ax2.plot(new_pol_X,new_pol_Y)
+line, = ax2.plot(new_new_X,new_new_Y)
+
+
 
 
 plt.show()
