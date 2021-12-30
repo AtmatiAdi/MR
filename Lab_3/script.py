@@ -12,7 +12,7 @@ def pol2cart(rho, phi):
 	y = rho*np.sin(phi)
 	return(x,y)
 
-def lines2Points(lines):
+def lines2Points(lines):	# Nie pokazuje pierwszej lini !!
 	X = []
 	Y = []
 	for l in range(len(lines)-1):
@@ -30,18 +30,28 @@ def lines2Points(lines):
 def points2Lines(X, Y, buf):
 	Lines = []
 	n = len(X)
-	for p in range(n-buf):
+	p = 0
+	while True:
 		x = X[p:p+buf]
 		y = Y[p:p+buf]
-		print("X: " + str(x) + " Y: " + str(y))
+		#print(x)
+		#print("X: " + str(x) + " Y: " + str(y))
 		model = np.polyfit(np.array(x), np.array(y) , 1)
 		#print(model)
 		#ffit = np.poly1d(model)
 		a = model[0]
+		#print("a = " + str(a))
 		b = model[1]
 		phi = np.rad2deg(np.arctan(a))
 		Lines.append([x,y,a,b,phi])
-	return Lines
+
+		p = p+buf-1
+		if n - p < buf-1:
+			if n - p > 0:
+				# zostaly punkty jeszcze
+				buf = n-p+1
+			else:
+				return Lines
 
 def sonar2Points(data):
 	X = []
@@ -58,15 +68,16 @@ def sonar2Points(data):
 
 def filterLines(lines, sens):
 	new_lines = []
-	while len(lines) > 2:	# WAZNE GUBI OSTATNIA LINIE ??
+	old_count = len(lines)
+	while True:
 		x1, y1, a1, b1, phi1 = lines.pop(0)		# p1
-		x2, y2, a2, b2, phi2 = lines.pop(1) 	# p2
+		x2, y2, a2, b2, phi2 = lines.pop(0) 	# p2
 		x = x2.copy()
 		y = y2.copy()
-		#print("x1: " + str(x1))
-		#print("x2: " + str(x2))
 		# Jesli roznica miedzy dwoma liniami jest ponizej sens to scal je
+		#print("phi1 = " + str(phi1) + ", phi2 = " + str(phi2))
 		if math.fabs(phi1 - phi2) <= sens:
+			#print("scalenie")
 			# transfer p1 do p2
 			while len(x1) > 0:
 				exist = False
@@ -90,32 +101,43 @@ def filterLines(lines, sens):
 		else:
 			new_lines.append([x1,y1,a1,b1,phi1])
 			new_lines.append([x2,y2,a2,b2,phi2])
+		if len(lines) <= 2:
+			while len(lines) > 0:
+				new_lines.append(lines.pop(0))
+			if old_count > len(new_lines):
+				new_lines = filterLines(new_lines, sens)
+			return new_lines
 		#print("x2: " + str(x))
 		#input("")
-	return new_lines
+	
 ###################################################################################
 # BEGIN
 ###################################################################################
-json_data = open('box.json')
-data = json.load(json_data)
-x = np.arange(0,512)
-theta = (np.pi/512 )*x  # theta - scan angles in [rad]
-X,Y = sonar2Points(data)
-lines = points2Lines(X, Y, 2)
-print("Ilosc lini surowych: " + str(len(lines)))
-pol_X, pol_Y = lines2Points(lines)
+poly_points = 4		# GOLDEN VALUES = 4 AND 17
+filtr_deg 	= 45/2
 
 fig2 = plt.figure()
 ax2 = fig2.gca()
-line, = ax2.plot(X,Y,'.')
-line, = ax2.plot(pol_X,pol_Y)
 
+json_data = open('box.json')
+data = json.load(json_data)
 
-lines = filterLines(lines, 15)
+x = np.arange(0,512)
+theta = (np.pi/512 )*x  # theta - scan angles in [rad]
+X,Y = sonar2Points(data)
+print("Ilosc wczytanych punktów: " + str(len(X)))
 
-print("Ilosc lini po scalaniu: " + str(len(lines)))
+lines = points2Lines(X, Y, poly_points) 
+print("Ilosc lini surowych: " + str(len(lines)))
+
+pol_X, pol_Y = lines2Points(lines)
+lines = filterLines(lines, filtr_deg)
+print("Ilosc lini po filtracji [deg=" + str(filtr_deg) + "] : " + str(len(lines)))
 
 new_X, new_Y = lines2Points(lines)
+
+line, = ax2.plot(X,Y,'.')
+line, = ax2.plot(pol_X,pol_Y)
 line, = ax2.plot(new_X,new_Y)
 
 
