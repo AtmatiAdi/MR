@@ -35,9 +35,9 @@ def points2Lines(X, Y, buf):
 		x = X[p:p+buf]
 		y = Y[p:p+buf]
 		#print(x)
-		#print("X: " + str(x) + " Y: " + str(y))
+		print("X: " + str(x) + " Y: " + str(y))
 		model = np.polyfit(np.array(x), np.array(y) , 1)
-		#print(model)
+		print(model)
 		#ffit = np.poly1d(model)
 		a = model[0]
 		#print("a = " + str(a))
@@ -90,7 +90,7 @@ def filterLinesCore(lines, sens):
 		y = y2.copy()
 		# Jesli roznica miedzy dwoma liniami jest ponizej sens to scal je
 		#print("phi1 = " + str(phi1) + ", phi2 = " + str(phi2))
-		if math.fabs(phi1 - phi2) <= sens:
+		if (math.fabs(phi1 - phi2) <= sens) or ( (90 - math.fabs(phi1)) + (90 - math.fabs(phi2)) <= sens): # 
 			#print("scalenie")
 			# transfer p1 do p2
 			while len(x1) > 0:
@@ -121,7 +121,6 @@ def filterLinesCore(lines, sens):
 			return new_lines
 		#print("x2: " + str(x))
 		#input("")
-	
 ###################################################################################
 # BEGIN
 ###################################################################################
@@ -135,13 +134,14 @@ fig2 = plt.figure()
 ax2 = fig2.gca()
 
 # READ JSON FILE
-json_data = open('wall.json')
+json_data = open('box.json')
 data = json.load(json_data)
 
 # GENERATE POINTS IN CARTESIANPLANE
 x = np.arange(0,512)
 theta = (np.pi/512 )*x  # theta - scan angles in [rad]
 X,Y = sonar2Points(data)
+
 print("Ilosc wczytanych punktów: " + str(len(X)))
 
 # GENERATE LINES USING POLYFIT
@@ -164,10 +164,10 @@ new_new_X, new_new_Y = lines2Points(lines)
 print("Ilosc lini po filtracji [deg=" + str(filtr_deg_2) + "] : " + str(len(lines)))
 
 line, = ax2.plot(X,Y,'.')
-# line, = ax2.plot(pol_X,pol_Y)
-# line, = ax2.plot(new_X,new_Y)
+line, = ax2.plot(pol_X,pol_Y)
+#line, = ax2.plot(new_X,new_Y)
 # line, = ax2.plot(new_pol_X,new_pol_Y)
-line, = ax2.plot(new_new_X,new_new_Y)
+#line, = ax2.plot(new_new_X,new_new_Y)
 
 
 
