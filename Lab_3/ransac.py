@@ -60,9 +60,11 @@ def sonar2Points(data):
         # print(data[p])
     return X, Y
 
+
 def dist_point_to_line(x1, y1, a, b, c):
     d = abs((a * x1 + b * y1 + c)) / (math.sqrt(a * a + b * b))
     return d
+
 
 # READ JSON FILE
 json_data = open('box.json')
@@ -74,11 +76,14 @@ theta = (np.pi/512)*x  # theta - scan angles in [rad]
 X, Y = sonar2Points(data)
 
 # PLOT
-fig2 = plt.figure()
-ax = fig2.gca()
-line, = ax.plot(X, Y, '.')
+fig = plt.figure()
+ax = fig.gca()
+plot_line = ax.plot(X, Y, '.')
+plt.xlim([-5, 5])
+plt.ylim([-5, 5])
+plt.savefig('tmp_map.png', dpi=200)
 
-iterations = 1000
+iterations = 10000
 
 for j in range(1, iterations):
     X_random = []
@@ -102,7 +107,7 @@ for j in range(1, iterations):
         y0 = tmp_line[0] * x0 + tmp_line[1]
         x1 = 1
         y1 = tmp_line[0] * x1 + tmp_line[1]
-        line, = ax.plot([x0, x1], [y0, y1])
+        plot_line = ax.plot([x0, x1], [y0, y1])
 
         pts_to_delete = []
         for i in range(0, len(X) - 1):
@@ -114,5 +119,5 @@ for j in range(1, iterations):
             Y.pop(pts_to_delete[i])
 
 
-line, = ax.plot(X, Y, 'r.')
+plot_line = ax.plot(X, Y, 'r.')
 plt.show()
