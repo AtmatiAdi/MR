@@ -134,7 +134,7 @@ fig2 = plt.figure()
 ax2 = fig2.gca()
 
 # READ JSON FILE
-json_data = open('box.json')
+json_data = open('wall.json')
 data = json.load(json_data)
 
 # GENERATE POINTS IN CARTESIANPLANE
