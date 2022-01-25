@@ -134,7 +134,7 @@ fig2 = plt.figure()
 ax2 = fig2.gca()
 
 # READ JSON FILE
-json_data = open('wall.json')
+json_data = open('box.json')
 data = json.load(json_data)
 
 # GENERATE POINTS IN CARTESIANPLANE
@@ -163,13 +163,14 @@ lines = filterLines(lines, filtr_step, filtr_deg_2)
 new_new_X, new_new_Y = lines2Points(lines)
 print("Ilosc lini po filtracji [deg=" + str(filtr_deg_2) + "] : " + str(len(lines)))
 
-#line, = ax2.plot(X,Y,'.')
+line, = ax2.plot(X,Y,'.')
 #line, = ax2.plot(pol_X,pol_Y)
 #line, = ax2.plot(new_X,new_Y)
 #line, = ax2.plot(new_pol_X,new_pol_Y)
-line, = ax2.plot(new_new_X,new_new_Y)
-line, = ax2.plot(new_new_X,new_new_Y, '.')
-
+#line, = ax2.plot(new_new_X,new_new_Y)
+#line, = ax2.plot(new_new_X,new_new_Y, '.')
+#plt.xlim([-5, 5])
+#plt.ylim([-5, 5])
 
 
 
