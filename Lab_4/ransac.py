@@ -4,14 +4,13 @@ from math import fabs, sin, cos
 import json
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
-import random
 
 
 def pol2cart(rho, phi):
     x = rho * np.cos(phi)
     y = rho * np.sin(phi)
     return (x, y)
+
 
 def sonar2Points(data):
     X = []
@@ -26,15 +25,23 @@ def sonar2Points(data):
         # print(data[p])
     return X, Y
 
+
 def dist_point_to_line(x1, y1, a, b, c):
     d = abs((a * x1 + b * y1 + c)) / (math.sqrt(a * a + b * b))
     return d
 
+
 # READ JSON FILE
-json_data = open('wall.json')
-data = json.load(json_data)
+json_data = open('data_stereo_fwd.json')
+raw_data = json.load(json_data)
+
+print("Keys of iteration 0:")
+print(raw_data[0].keys())
+
+print("Angles to markers in iteration 0:")
 
 # GENERATE POINTS IN CARTESIANPLANE
+data = raw_data[0]['scan']
 x = np.arange(0, 512)
 theta = (np.pi/512)*x  # theta - scan angles in [rad]
 X, Y = sonar2Points(data)

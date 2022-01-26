@@ -4,8 +4,7 @@ from math import fabs, sin, cos
 import json
 import matplotlib.pyplot as plt
 import numpy as np
-import cv2
-import random
+
 
 
 def pol2cart(rho, phi):
@@ -31,7 +30,7 @@ def dist_point_to_line(x1, y1, a, b, c):
     return d
 
 # READ JSON FILE
-json_data = open('wall.json')
+json_data = open('box.json')
 data = json.load(json_data)
 
 # GENERATE POINTS IN CARTESIANPLANE
