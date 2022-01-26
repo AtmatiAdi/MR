@@ -15,6 +15,8 @@ def pol2cart(rho, phi):
 def sonar2Points(data):
     X = []
     Y = []
+    Alph = []
+    Dist = []
     for p in range(512):
         phi = 360 / 512 * p / 2
         if (math.isinf(data[p]) != True) and (math.isnan(data[p]) != True):
@@ -22,8 +24,10 @@ def sonar2Points(data):
             # points.append([x,y])
             X.append(x)
             Y.append(y)
+            Alph.append(phi)
+            Dist.append(data[p])
         # print(data[p])
-    return X, Y
+    return X, Y, Alph, Dist
 
 
 def dist_point_to_line(x1, y1, a, b, c):
@@ -41,10 +45,10 @@ print(raw_data[0].keys())
 print("Angles to markers in iteration 0:")
 
 # GENERATE POINTS IN CARTESIANPLANE
-data = raw_data[0]['scan']
+data = raw_data[2]['scan']
 x = np.arange(0, 512)
 theta = (np.pi/512)*x  # theta - scan angles in [rad]
-X, Y = sonar2Points(data)
+X, Y, Alph, Dist = sonar2Points(data)
 
 # PLOT
 fig = plt.figure()
@@ -92,6 +96,7 @@ while (line_is_detected):
             best_fitted_pts_count = fitted_pts_count
             best_line = tmp_line
             line_is_detected = 1
+            print("FOUND")
             best_random_first_index = random_first_index
 
     if best_fitted_pts_count > pts_low_treshold:
@@ -103,12 +108,14 @@ while (line_is_detected):
             if (math.dist([X[i-1], Y[i-1]], [X[i], Y[i]]) < 10*(pts_sense + pts_oversense)): 
                 if dist_point_to_line(X[i], Y[i], best_line[0], -1, best_line[1]) < pts_sense + pts_oversense:
                     upper_pts_to_delete.append(i)
+                    print("up")
                 else: break
         # from best_random_first_index to first
         for i in range(best_random_first_index, 0, -1):
             if (math.dist([X[i+1], Y[i+1]], [X[i], Y[i]]) < 5*(pts_sense + pts_oversense)):
                 if dist_point_to_line(X[i], Y[i], best_line[0], -1, best_line[1]) < pts_sense + pts_oversense:
                     down_pts_to_delete.append(i)
+                    print("down")
                 else: break
 
         plot_line = ax.plot([X[down_pts_to_delete[-1]], X[upper_pts_to_delete[-1]]], [Y[down_pts_to_delete[-1]], Y[upper_pts_to_delete[-1]]])
@@ -117,10 +124,9 @@ while (line_is_detected):
         for i in range(len(upper_pts_to_delete) - 1, 0, -1):
             X.pop(upper_pts_to_delete[i])
             Y.pop(upper_pts_to_delete[i])
-
         for i in range(0, len(down_pts_to_delete)):
             X.pop(down_pts_to_delete[i])
             Y.pop(down_pts_to_delete[i])
 
-#plot_line = ax.plot(X, Y, 'r.')
+plot_line = ax.plot(X, Y, 'r.')
 plt.show()

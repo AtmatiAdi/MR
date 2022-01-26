@@ -54,17 +54,21 @@ def points2Lines(X, Y, buf):
 				return Lines
 
 def sonar2Points(data):
-	X = []
-	Y = []
-	for p in range(512):
-		phi = 360/512 * p/2
-		if (math.isinf(data[p]) != True) and (math.isnan(data[p]) != True):
-			x, y =pol2cart(data[p], np.deg2rad(phi))
-			#points.append([x,y])
-			X.append(x)
-			Y.append(y)
-			#print(data[p])
-	return X,Y
+    X = []
+    Y = []
+    Alph = []
+    Dist = []
+    for p in range(512):
+        phi = 360 / 512 * p / 2
+        if (math.isinf(data[p]) != True) and (math.isnan(data[p]) != True):
+            x, y = pol2cart(data[p], np.deg2rad(phi))
+            # points.append([x,y])
+            X.append(x)
+            Y.append(y)
+            Alph.append(phi)
+            Dist.append(data[p])
+        # print(data[p])
+    return X, Y, Alph, Dist
 
 def filterLines(lines, step, max):
 	filter_val = 0
@@ -121,6 +125,34 @@ def filterLinesCore(lines, sens):
 			return new_lines
 		#print("x2: " + str(x))
 		#input("")
+
+def get_intersections(x0, y0, r0, x1, y1, r1):
+    # circle 1: (x0, y0), radius r0
+    # circle 2: (x1, y1), radius r1
+
+    d=math.sqrt((x1-x0)**2 + (y1-y0)**2)
+    
+    # non intersecting
+    if d > r0 + r1 :
+        return None
+    # One circle within other
+    if d < abs(r0-r1):
+        return None
+    # coincident circles
+    if d == 0 and r0 == r1:
+        return None
+    else:
+        a=(r0**2-r1**2+d**2)/(2*d)
+        h=math.sqrt(r0**2-a**2)
+        x2=x0+a*(x1-x0)/d   
+        y2=y0+a*(y1-y0)/d   
+        x3=x2+h*(y1-y0)/d     
+        y3=y2-h*(x1-x0)/d 
+
+        x4=x2-h*(y1-y0)/d
+        y4=y2+h*(x1-x0)/d
+        
+        return (x3, y3, x4, y4)
 ###################################################################################
 # BEGIN
 ###################################################################################
@@ -128,19 +160,25 @@ poly_points 	= 4
 poly_points_2 	= 3
 filtr_step 		= 1
 filtr_deg 		= 10
-filtr_deg_2 	= 20
+filtr_deg_2 	= 15
 
 fig2 = plt.figure()
 ax2 = fig2.gca()
 
 # READ JSON FILE
-json_data = open('box.json')
-data = json.load(json_data)
+json_data = open('data_stereo_fwd.json')
+raw_data = json.load(json_data)
+
+print("Keys of iteration 0:")
+print(raw_data[0].keys())
+
+print("Angles to markers in iteration 0:")
 
 # GENERATE POINTS IN CARTESIANPLANE
+data = raw_data[2]['scan']
 x = np.arange(0,512)
 theta = (np.pi/512 )*x  # theta - scan angles in [rad]
-X,Y = sonar2Points(data)
+X,Y,Alph,Dist = sonar2Points(data)
 
 print("Ilosc wczytanych punktów: " + str(len(X)))
 
@@ -167,12 +205,40 @@ line, = ax2.plot(X,Y,'.')
 #line, = ax2.plot(pol_X,pol_Y)
 #line, = ax2.plot(new_X,new_Y)
 #line, = ax2.plot(new_pol_X,new_pol_Y)
-#line, = ax2.plot(new_new_X,new_new_Y)
-#line, = ax2.plot(new_new_X,new_new_Y, '.')
+line, = ax2.plot(new_new_X,new_new_Y)
+line, = ax2.plot(new_new_X,new_new_Y, '.')
 #plt.xlim([-5, 5])
 #plt.ylim([-5, 5])
 
+one = 50
+two = 150
 
+
+# intersection circles
+x0, y0 = X[one], Y[one]
+r0 = Dist[one]
+x1, y1 = X[two], Y[two]
+r1 = Dist[two]
+
+plt.plot(x0,y0, '.', color='r')
+plt.plot(x1,y1, '.', color='r')
+
+circle1 = plt.Circle((x0, y0), r0, color='b', fill=False)
+circle2 = plt.Circle((x1, y1), r1, color='b', fill=False)
+
+#fig, ax = plt.subplots() 
+#ax2.set_xlim((-10, 10))
+#ax2.set_ylim((-10, 10))
+ax2.add_artist(circle1)
+ax2.add_artist(circle2)
+
+intersections = get_intersections(x0, y0, r0, x1, y1, r1)
+if intersections is not None:
+    i_x3, i_y3, i_x4, i_y4 = intersections 
+    plt.plot([i_x3, i_x4], [i_y3, i_y4], '.', color='b')
+    
+
+plt.gca().set_aspect('equal', adjustable='box')
 
 plt.show()
 	
