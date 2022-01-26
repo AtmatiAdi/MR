@@ -36,7 +36,7 @@ def dist_point_to_line(x1, y1, a, b, c):
 
 
 # READ JSON FILE
-json_data = open('data_stereo_fwd.json')
+json_data = open('line.json')
 raw_data = json.load(json_data)
 
 print("Keys of iteration 0:")
@@ -53,7 +53,7 @@ X, Y, Alph, Dist = sonar2Points(data)
 # PLOT
 fig = plt.figure()
 ax = fig.gca()
-#plot_line = ax.plot(X, Y, '.')
+plot_line = ax.plot(X, Y, '.')
 #plt.xlim([-5, 5])
 #plt.ylim([-5, 5])
 plt.savefig('tmp_map.png', dpi=200)
@@ -96,7 +96,6 @@ while (line_is_detected):
             best_fitted_pts_count = fitted_pts_count
             best_line = tmp_line
             line_is_detected = 1
-            print("FOUND")
             best_random_first_index = random_first_index
 
     if best_fitted_pts_count > pts_low_treshold:
@@ -105,17 +104,15 @@ while (line_is_detected):
         upper_pts_to_delete = []
         # form best_random_first_index to end
         for i in range(best_random_first_index, len(X) - 1):
-            if (math.dist([X[i-1], Y[i-1]], [X[i], Y[i]]) < 10*(pts_sense + pts_oversense)): 
+            if (math.dist([X[i-1], Y[i-1]], [X[i], Y[i]]) < 20*(pts_sense + pts_oversense)): 
                 if dist_point_to_line(X[i], Y[i], best_line[0], -1, best_line[1]) < pts_sense + pts_oversense:
                     upper_pts_to_delete.append(i)
-                    print("up")
                 else: break
         # from best_random_first_index to first
         for i in range(best_random_first_index, 0, -1):
-            if (math.dist([X[i+1], Y[i+1]], [X[i], Y[i]]) < 5*(pts_sense + pts_oversense)):
+            if (math.dist([X[i+1], Y[i+1]], [X[i], Y[i]]) < 20*(pts_sense + pts_oversense)):
                 if dist_point_to_line(X[i], Y[i], best_line[0], -1, best_line[1]) < pts_sense + pts_oversense:
                     down_pts_to_delete.append(i)
-                    print("down")
                 else: break
 
         plot_line = ax.plot([X[down_pts_to_delete[-1]], X[upper_pts_to_delete[-1]]], [Y[down_pts_to_delete[-1]], Y[upper_pts_to_delete[-1]]])

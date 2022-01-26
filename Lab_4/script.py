@@ -166,7 +166,7 @@ fig2 = plt.figure()
 ax2 = fig2.gca()
 
 # READ JSON FILE
-json_data = open('data_stereo_fwd.json')
+json_data = open('line.json')
 raw_data = json.load(json_data)
 
 print("Keys of iteration 0:")
@@ -210,8 +210,8 @@ line, = ax2.plot(new_new_X,new_new_Y, '.')
 #plt.xlim([-5, 5])
 #plt.ylim([-5, 5])
 
-one = 50
-two = 150
+one = 73
+two = 332
 
 
 # intersection circles
