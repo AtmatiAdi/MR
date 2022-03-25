@@ -1,4 +1,4 @@
-from ctypes import sizeof
+rom ctypes import sizeof
 from re import I
 import numpy as np
 import math
@@ -54,7 +54,9 @@ class RobotController:
     def init_map(self, scans):
         self.grid_map = np.full((self.grid_size, self.grid_size), 0.5, dtype=float)        
         for i in range(512):
-            if (math.isinf(scans[i]) != True) and (math.isnan(scans[i]) != True):
+            if (math.isnan(scans[i]) != True):
+                if (math.isinf(scans[i]) != True) :
+                    scans[i] = self.grid_size/2
                 obstacle = self.calc_pixel(scans[i], i)
                 self.grid_map[obstacle[0]][obstacle[1]] = 1
                 
@@ -66,7 +68,9 @@ class RobotController:
         
     def update_map(self, scans):
         for i in range(512):
-            if (math.isinf(scans[i]) != True) and (math.isnan(scans[i]) != True):
+            if (math.isnan(scans[i]) != True):
+                if (math.isinf(scans[i]) != True) :
+                    scans[i] = self.grid_size/2
                 obstacle = self.calc_pixel(scans[i], i)
                 self.grid_map[obstacle[0]][obstacle[1]] = 1
                 
