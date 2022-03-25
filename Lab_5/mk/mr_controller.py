@@ -82,5 +82,6 @@ class RobotController:
 
     def start(self):
         print("RobotController >> STARTED")
-        self.plotter.update_map(self.grid_map)
-0 
+        while True:
+            self.plotter.update_map(self.grid_map)
+
