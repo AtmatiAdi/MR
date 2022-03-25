@@ -11,5 +11,3 @@ if __name__ == "__main__":
     ctrl = RobotController(150, 6)
     # ctrl.init_map(scan)
     ctrl.start()
-    # plotter = MapPlotter()
-    # plotter.show_map(ctrl)

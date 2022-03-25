@@ -10,8 +10,9 @@ class MapPlotter:
         plt.imshow(ctrl.get_map(), interpolation="nearest", cmap='Blues')
         plt.colorbar()
         plt.draw()
+        plt.pause(1/300)        
         while True:
             plt.imshow(ctrl.get_map(), interpolation="nearest", cmap='Blues')
             plt.draw()
-            plt.pause(1/30)
+            plt.pause(1/300)
 
