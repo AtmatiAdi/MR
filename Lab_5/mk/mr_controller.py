@@ -78,10 +78,12 @@ class RobotController:
                 # POROWNANIE STAREJ MAPY Z NOWA
     
     def get_map(self):
+        print("RobotController >> returning map")   
         return self.grid_map
 
     def start(self):
         print("RobotController >> STARTED")
         while True:
             self.plotter.update_map(self.grid_map)
+        # rospy.spin()
 
