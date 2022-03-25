@@ -2,12 +2,10 @@ from ctypes import sizeof
 from re import I
 import numpy as np
 import math
-# from tf.transformations import euler_from_quaternion, quaternion_from_euler
-# from sensor_msgs.msg import LaserScan
-# from nav_msgs.msg import Odometry
-# import rospy
-#from numba import jit
-#from numba.experimental import jitclass
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
+from sensor_msgs.msg import LaserScan
+from nav_msgs.msg import Odometry
+import rospy
 from multiprocessing import Process
 from threading import Thread
 import time
@@ -22,11 +20,11 @@ class RobotController:
         self.robot_x = 0
         self.robot_y = 0
         self.robot_th = 0
-        # rospy.init_node('listener', anonymous=True)
-        # rospy.Subscriber("/PIONIER"+str(nr)+"/scan",
-        #                  LaserScan, self.callback_scan)
-        # rospy.Subscriber("/PIONIER"+str(nr)+"/RosAria/pose",
-        #                  Odometry, self.callback_position)
+        rospy.init_node('listener', anonymous=True)
+        rospy.Subscriber("/PIONIER"+str(nr)+"/scan",
+                         LaserScan, self.callback_scan)
+        rospy.Subscriber("/PIONIER"+str(nr)+"/RosAria/pose",
+                         Odometry, self.callback_position)
 
     def callback_scan(self, msg):
         scans = list(msg.ranges)
@@ -55,7 +53,7 @@ class RobotController:
                 obstacle = self.calc_pixel(scans[i], i)
                 self.grid_map[obstacle[0]][obstacle[1]] = 1
                 
-                points = np.linspace(0,scans[i],self.grid_size/2)
+                points = np.linspace(0,scans[i], int(self.grid_size/2))
                 for s in range(len(points)):
                     miss = self.calc_pixel(points[s], i)
                     if (self.grid_map[miss[0]][miss[1]] != 1):
@@ -75,6 +73,7 @@ class RobotController:
                 # POROWNANIE STAREJ MAPY Z NOWA
     
     def get_map(self):
+        print("RobotController >> returning map")        
         return self.grid_map
 
     def start(self):
