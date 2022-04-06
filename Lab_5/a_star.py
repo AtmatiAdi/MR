@@ -30,7 +30,7 @@ class Point():
         else:
             self.cost = parent.cost + 1
 
-        self.priority = np.sqrt((self.x+goal[0])**2 + (self.y-goal[1])**2) + self.cost
+        self.priority = np.sqrt((self.x-goal[0])**2 + (self.y-goal[1])**2) + self.cost
 
     def __lt__(self, other):
         return (self.priority < other.priority)
@@ -74,7 +74,7 @@ def a_star(binary_map, start, goal):
             if point.x == goal[0] and point.y == goal[1]:
                 return point
 
-            if binary_map[point.x][point.y] == 1:
+            if binary_map[point.x][point.y] > 0:
                 continue
             
             if point.is_part_of(open_list):
@@ -89,7 +89,7 @@ def a_star(binary_map, start, goal):
 
 
 if __name__ == '__main__':
-    goal = (45, 45)
+    goal = (45, 5)
     start = Point(50, 50, goal)
 
     bmap = np.full((100, 100), 0, dtype=int)
