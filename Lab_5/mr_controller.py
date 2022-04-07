@@ -23,9 +23,9 @@ class RobotController:
         self.duailsm_map = None
         rospy.init_node('listener', anonymous=True)
         rospy.Subscriber("/PIONIER"+str(nr)+"/scan",
-                         LaserScan, self.callback_scan)
+                         LaserScan, self.callback_scan, queue_size=1)
         rospy.Subscriber("/PIONIER"+str(nr)+"/RosAria/pose",
-                         Odometry, self.callback_position)
+                         Odometry, self.callback_position, queue_size=1)
 
     def callback_scan(self, msg):
         scans = list(msg.ranges)
@@ -37,7 +37,7 @@ class RobotController:
         else:
             self.update_map(scans)  
             self.gen_dualism_map()          
-        print("RobotController >> callback scan!")
+        #print("RobotController >> callback scan!")
 
     def callback_position(self, msg):
         self.robot_x = msg.pose.pose.position.x
@@ -48,13 +48,15 @@ class RobotController:
             msg.pose.pose.orientation.z,
             msg.pose.pose.orientation.w)
         self.robot_th = euler_from_quaternion(quaternion)[2]
-        print("Robot: {} {} {}".format(self.robot_x, self.robot_y, self.robot_th))
+        #print("Robot: {} {} {}".format(self.robot_x, self.robot_y, self.robot_th))
 
     def calc_pixel(self, hit, i):
         x = int(self.origin + self.robot_x*10\
             + np.cos(self.robot_th+(i)*np.pi/512-np.pi/2)*hit*10)
+            #+ np.cos((i)*np.pi/512)*hit*10)
         y = int(self.origin + self.robot_y*10\
             + np.sin(self.robot_th+(i)*np.pi/512-np.pi/2)*hit*10)
+            #+ np.sin((i)*np.pi/512)*hit*10)
         if x < 0 or x > self.grid_size or y < 0 or y > self.grid_size:
             return None
         return [x, y]
@@ -74,17 +76,22 @@ class RobotController:
                     self.grid_map[miss[0]][miss[1]] = 0
         
     def update_map(self, scans):
-        for i in range(512):
+        for i in range(512):  # For every meas in
             if (math.isnan(scans[i])):
                 continue
             if (math.isinf(scans[i])):
+                continue
                 scans[i] = 5
             else:
                 obstacle = self.calc_pixel(scans[i], i)
                 if obstacle is not None:
                     self.grid_map[obstacle[0]][obstacle[1]] = 1
+                    if (i == 256):
+                      print("X: " + str(self.robot_x))
+                      print("H: " + str(scans[i]))
+            
             try:
-                points = np.linspace(0,scans[i],int(self.grid_size*2))
+                points = np.linspace(0,scans[i],int(self.grid_size))
                 for s in range(len(points)):
                     miss = self.calc_pixel(points[s], i)
                     if miss is not None:                    
@@ -101,7 +108,7 @@ class RobotController:
                 # POROWNANIE STAREJ MAPY Z NOWA
     def gen_dualism_map(self):
         tmp = 0
-        self.duailsm_map = np.full((self.grid_size, self.grid_size), 0, dtype=float)     
+        self.duailsm_map = np.full((self.grid_size, self.grid_size), 0, dtype=int)     
         for i in range(self.grid_size):
             for j in range(self.grid_size):
                 tmp = self.grid_map[i][j]
@@ -112,7 +119,7 @@ class RobotController:
         # Make obstacles bigger
         x_around = [-1,0,1,0]
         y_around = [0,1,0.-1]
-        for a in range(5):
+        for a in range(2):
             for i in range(self.grid_size):
                 for j in range(self.grid_size):
                     # find Obstacle
@@ -130,6 +137,11 @@ class RobotController:
                 for j in range(self.grid_size):
                     if self.duailsm_map[i][j] == 3:
                         self.duailsm_map[i][j] = 2
+        # Normalise whole map for A*
+        for i in range(self.grid_size):
+          for j in range(self.grid_size):
+              if self.duailsm_map[i][j] > 0:
+                  self.duailsm_map[i][j] = 1
         pickle.dump(self.duailsm_map, open('/tmp/duailsm_map_file.p', 'wb'))
 
     def get_map(self):
