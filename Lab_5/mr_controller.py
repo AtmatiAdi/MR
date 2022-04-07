@@ -142,7 +142,7 @@ class RobotController:
           for j in range(self.grid_size):
               if self.duailsm_map[i][j] > 0:
                   self.duailsm_map[i][j] = 1
-        pickle.dump(self.duailsm_map, open('/tmp/duailsm_map_file.p', 'wb'))
+        pickle.dump(self.duailsm_map, open('/tmp/dualism_map_file.p', 'wb'))
 
     def get_map(self):
         print("RobotController >> returning map")        
