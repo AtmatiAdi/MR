@@ -3,7 +3,7 @@ import numpy as np
 from queue import PriorityQueue
 from numba.experimental import jitclass
 from numba import int32, float64, deferred_type, optional
-from numba import jit
+from numba import jit, typeof
 import time
 import pickle
 
@@ -21,11 +21,11 @@ class Point():
         self.x = x
         self.y = y
         self.parent = parent
-        print("generated {} {}".format(x, y))
+        # print("generated {} {}".format(x, y)) 
         if parent is None:
             self.cost = 0
         elif parent.x != self.x and parent.y != self.y:
-            self.cost = parent.cost + 1.41
+            self.cost = parent.cost + 1.41421356237
 
         else:
             self.cost = parent.cost + 1
@@ -76,12 +76,14 @@ def a_star(binary_map, start, goal):
 
             if binary_map[point.x][point.y] > 0:
                 continue
-            
-            if point.is_part_of(open_list):
-                continue
 
-            if point.is_part_of(closed_list):
-                continue
+            if open_list:
+                if point.is_part_of(open_list):
+                    continue
+
+            if closed_list:                
+                if point.is_part_of(closed_list):
+                    continue
 
             open_queue.put(point)
             open_list.append(point)
@@ -89,16 +91,16 @@ def a_star(binary_map, start, goal):
 
 
 if __name__ == '__main__':
-    goal = (45, 5)
+    size = 250
+    goal = (100, 85)
     start = Point(50, 50, goal)
-
-    bmap = np.full((100, 100), 0, dtype=int)
-    fmap = np.full((100, 100), 0, dtype=int)
+    bmap = pickle.load(open('/tmp/dualism_map_file.p', 'rb'))
+    fmap = bmap
     point = a_star(bmap, start, goal)
     while True:
         if point.x == start.x and point.y == start.y:
             break
-        fmap[point.x][point.y] = 1
-        print("path {} {}".format(point.x, point.y))
+        fmap[point.x][point.y] = 2
+        # print("path {} {}".format(point.x, point.y))
         point = point.parent
     pickle.dump(fmap, open('/tmp/map_file.p', 'wb'))
