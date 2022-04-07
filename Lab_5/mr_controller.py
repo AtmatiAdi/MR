@@ -77,11 +77,12 @@ class RobotController:
         
     def update_map(self, scans):
         for i in range(512):  # For every meas in
+            miss = False
             if (math.isnan(scans[i])):
                 continue
             if (math.isinf(scans[i])):
-                continue
-                scans[i] = 5
+                scans[i] = 2
+                miss = True
             else:
                 obstacle = self.calc_pixel(scans[i], i)
                 if obstacle is not None:
@@ -100,8 +101,6 @@ class RobotController:
 
             except IndexError:
                 continue
-            if scans[i] != 5:
-                self.grid_map[obstacle[0]][obstacle[1]] = 1
 
         pickle.dump(self.grid_map, open('/tmp/map_file.p', 'wb'))
 
