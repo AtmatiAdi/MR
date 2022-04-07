@@ -5,20 +5,19 @@ import pickle
 
 
 def show_map():
-    grid_map = pickle.load(open('/tmp/map_file.p', 'rb'))    
-    plt.imshow(grid_map, interpolation="nearest", cmap='Blues')
-    plt.colorbar()
+    fig, ax = plt.subplots()        
+    grid_map = pickle.load(open('/tmp/map_file.p', 'rb'))
+    ax.imshow(grid_map, interpolation="nearest", cmap='Blues')
+    # ax.colorbar()
     plt.draw()
     i = 0
     while True:
         grid_map = pickle.load(open('/tmp/map_file.p', 'rb'))
-        plt.imshow(grid_map, interpolation="nearest", cmap='Blues')
+        path = pickle.load(open('/tmp/path_file.p', 'rb'))        
+        ax.imshow(grid_map, interpolation="nearest", cmap='Blues')
+        ax.plot([p[1] for p in path], [p[0] for p in path])
         plt.draw()
         plt.pause(2)
-        # print(i)
-        # i += 1
-        # if i > 500:
-        #     return
 
 
 if __name__ == "__main__":

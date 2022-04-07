@@ -11,6 +11,9 @@ import pickle
 node_type = deferred_type()
 
 
+class NoPathError(Exception):
+    pass
+
 # @jitclass([('x', int32),
 #            ('y', int32),
 #            ('cost', float64),
@@ -21,7 +24,7 @@ class Point():
         self.x = x
         self.y = y
         self.parent = parent
-        # print("generated {} {}".format(x, y)) 
+        print("generated {} {}".format(x, y)) 
         if parent is None:
             self.cost = 0
         elif parent.x != self.x and parent.y != self.y:
@@ -88,19 +91,23 @@ def a_star(binary_map, start, goal):
             open_queue.put(point)
             open_list.append(point)
         closed_list.append(q)
+    raise NoPathError
 
 
 if __name__ == '__main__':
+    path = []
     size = 250
-    goal = (100, 85)
-    start = Point(50, 50, goal)
+    goal = (90, 110)
+    start = Point(80, 100, goal)
     bmap = pickle.load(open('/tmp/dualism_map_file.p', 'rb'))
     fmap = bmap
     point = a_star(bmap, start, goal)
     while True:
         if point.x == start.x and point.y == start.y:
             break
+        path.append((point.x, point.y))
         fmap[point.x][point.y] = 2
         # print("path {} {}".format(point.x, point.y))
         point = point.parent
-    pickle.dump(fmap, open('/tmp/map_file.p', 'wb'))
+    # pickle.dump(fmap, open('/tmp/map_file.p', 'wb'))
+    pickle.dump(tuple(path), open('/tmp/path_file.p', 'wb'))    
