@@ -10,6 +10,10 @@ from multiprocessing import Process
 from threading import Thread
 import time
 import pickle
+import sys
+import threading
+import time
+import queue
 
 
 class RobotController:
@@ -87,9 +91,9 @@ class RobotController:
                 obstacle = self.calc_pixel(scans[i], i)
                 if obstacle is not None:
                     self.grid_map[obstacle[0]][obstacle[1]] = 1
-                    if (i == 256):
-                      print("X: " + str(self.robot_x))
-                      print("H: " + str(scans[i]))
+                    #if (i == 256):
+                      #print("X: " + str(self.robot_x))
+                      #print("H: " + str(scans[i]))
             
             try:
                 points = np.linspace(0,scans[i],int(self.grid_size))
@@ -143,10 +147,65 @@ class RobotController:
                   self.duailsm_map[i][j] = 1
         pickle.dump(self.duailsm_map, open('/tmp/dualism_map_file.p', 'wb'))
 
+    def add_input(self,input_queue):
+        while True:
+            input_queue.put(sys.stdin.read(1))
+
+    def foobar(self):
+        command = ""
+        target_x = 0
+        target_y = 0
+        buff = ""
+        symbol = ''
+        input_queue = queue.Queue()
+
+        input_thread = threading.Thread(target=self.add_input, args=(input_queue,))
+        input_thread.daemon = True
+        input_thread.start()
+
+        last_update = time.time()
+        print('>> ', end='', flush=True)
+        while True:
+
+            if time.time()-last_update>0.5:
+                #sys.stdout.write(".")
+                last_update = time.time()
+
+            if not input_queue.empty():
+                symbol = input_queue.get()
+                if(symbol != '\n'):
+                    buff += symbol
+                else:
+                    if(command == "t0"):
+                        target_x = int(buff)
+                        command = "t1"
+                        buff = ""
+                        print('>> Type y coordinate = ', end='', flush=True)
+                        
+                    elif(command == "t1"):
+                        target_y = int(buff)
+                        command = ""
+                        buff = ""
+                        print('>> Target point is set to: (x=' + str(target_x) +',y='+str(target_y)+')')
+                        print('>> ', end='', flush=True)
+                    else:
+                        if((buff == "set target") or (buff == "st")):
+                            command = "t0"
+                            print('>> Type x coordinate = ', end='', flush=True)
+                        elif(buff == "help"):
+                            print('>> There is no help for you! ', end='', flush=True)
+                            print('>> ', end='', flush=True)
+                        elif((buff == "exit")or(buff == "stop")or(buff == "quit")):
+                            sys.exit()
+                        buff = ""
+
     def get_map(self):
         print("RobotController >> returning map")        
         return self.grid_map
 
     def start(self):
         print("RobotController >> STARTED")
-        rospy.spin()
+        self.foobar()
+        while(True):
+            time.sleep(1)
+        #rospy.spin()
