@@ -25,7 +25,7 @@ class Point():
         self.x = x
         self.y = y
         self.parent = parent
-        print("generated {} {}".format(x, y)) 
+        # print("generated {} {}".format(x, y))
         if parent is None:
             self.cost = 0
         elif parent.x != self.x and parent.y != self.y:
@@ -105,7 +105,10 @@ if __name__ == '__main__':
     start = Point(80, 100, goal)
     bmap = pickle.load(open('/tmp/dualism_map_file.p', 'rb'))
     fmap = bmap
+    t0 = time.time_ns()
     point = a_star(bmap, start, goal)
+    tend = time.time_ns()
+    print("A* took {} ns".format(tend-t0))
     while True:
         if point.x == start.x and point.y == start.y:
             break
