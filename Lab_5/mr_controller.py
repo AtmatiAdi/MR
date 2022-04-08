@@ -10,22 +10,37 @@ from multiprocessing import Process
 from threading import Thread
 import time
 import pickle
+from a_star import a_star, reconstruct_path, NoPathError, Point
+from geometry_msgs.msg import Twist
+
+
+Kp = 0.5
+ang_err_tol = 0.1
+pos_err_tol = 0.1
+
+
+def real2cord(real):
+    return int(real*10)
 
 
 class RobotController:
     def __init__(self, grid_size, nr):
-        self.origin = grid_size/2
+        self.origin = grid_size//2
         self.grid_size = grid_size
         self.grid_map = None
         self.robot_x = None
         self.robot_y = None
         self.robot_th = None
         self.duailsm_map = None
+        self.path = None
+        self.goal = None
+
         rospy.init_node('listener', anonymous=True)
         rospy.Subscriber("/PIONIER"+str(nr)+"/scan",
                          LaserScan, self.callback_scan, queue_size=1)
         rospy.Subscriber("/PIONIER"+str(nr)+"/RosAria/pose",
                          Odometry, self.callback_position, queue_size=1)
+        self.pub = rospy.Publisher('/PIONIER'+str(nr)+'/RosAria/cmd_vel', Twist)
 
     def callback_scan(self, msg):
         scans = list(msg.ranges)
@@ -48,6 +63,8 @@ class RobotController:
             msg.pose.pose.orientation.z,
             msg.pose.pose.orientation.w)
         self.robot_th = euler_from_quaternion(quaternion)[2]
+        self.goal = (120, 75)
+
         #print("Robot: {} {} {}".format(self.robot_x, self.robot_y, self.robot_th))
 
     def calc_pixel(self, hit, i):
@@ -87,9 +104,9 @@ class RobotController:
                 obstacle = self.calc_pixel(scans[i], i)
                 if obstacle is not None:
                     self.grid_map[obstacle[0]][obstacle[1]] = 1
-                    if (i == 256):
-                      print("X: " + str(self.robot_x))
-                      print("H: " + str(scans[i]))
+                    # if (i == 256):
+                    #   print("X: " + str(self.robot_x))
+                    #   print("H: " + str(scans[i]))
             
             try:
                 points = np.linspace(0,scans[i],int(self.grid_size))
@@ -143,10 +160,73 @@ class RobotController:
                   self.duailsm_map[i][j] = 1
         pickle.dump(self.duailsm_map, open('/tmp/dualism_map_file.p', 'wb'))
 
+    def verify_path(self):
+        if not self.path:
+            return False
+
+        for point in self.path:
+            if self.duailsm_map[int(point[0])][int(point[1])] > 0:
+                return False
+
+        pickle.dump(self.path, open('/tmp/path_file.p', 'wb'))            
+        return True
+
+    def drive(self):
+        print("arctan2 = {}".format(np.arctan2(self.path[0][1]-self.robot_y, self.path[0][0]-self.robot_x)))
+        print("t_th = {}".format(self.robot_th))
+        
+        err = np.arctan2(self.path[0][1]-self.robot_y, self.path[0][0]-self.robot_x) - self.robot_th
+        err = err -np.pi
+        twist = Twist()
+        if abs(err) < ang_err_tol:
+            twist.angular.z = 0
+            twist.linear.x = 0.1
+        else:
+            twist.angular.z = Kp * err
+            twist.linear.x = 0
+            print("z = {}, err = {}".format(twist.angular.z, err))
+        self.pub.publish(twist)
+    
     def get_map(self):
         print("RobotController >> returning map")        
         return self.grid_map
 
+    def discard_visited(self):
+        if abs(self.path[0][0] - self.robot_x) < pos_err_tol and\
+           abs(self.path[0][1] - self.robot_y) < pos_err_tol:
+            self.path.pop()
+
+    def get_robot_cords(self):
+        return(self.origin + real2cord(self.robot_x), self.origin + real2cord(self.robot_y))
+        
     def start(self):
         print("RobotController >> STARTED")
+        while True:
+            try:
+                if self.goal and self.duailsm_map is not None and self.robot_th is not None:
+                    print("Goal exists")
+                    if self.goal[0] != self.robot_x and self.goal[1] != self.robot_y:
+                        if self.verify_path():
+                            print("Path correct")
+                            self.drive()
+                            self.discard_visited()
+                        else:
+                            print("Path incorrect!!!")                            
+                            self.path = reconstruct_path(
+                                a_star(self.duailsm_map, Point(*self.get_robot_cords(), self.goal), self.goal),
+                                Point(*self.get_robot_cords(), self.goal))
+
+            except NoPathError:
+                print("Path from {} {} to {} {} doesnt exist!!!".format(*self.get_robot_cords(), *self.goal))
+                twist = Twist()
+                twist.linear.x = 0
+                twist.angular.z = 0.5
+                self.pub.publish(twist)
+
+            # finally:
+            #     twist = Twist()
+            #     twist.linear.x = 0
+            #     twist.angular.z = 0
+            #     self.pub.publish(twist)
+                
         rospy.spin()

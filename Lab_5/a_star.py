@@ -94,6 +94,15 @@ def a_star(binary_map, start, goal):
         closed_list.append(q)
     raise NoPathError
 
+def reconstruct_path(point, start):
+    path = []
+    while True:
+        if point.x == start.x and point.y == start.y:
+            break
+        path.append((point.x, point.y))
+        point = point.parent        
+    return path
+
 
 if __name__ == '__main__':
     if(len(sys.argv) != 3):
@@ -102,19 +111,12 @@ if __name__ == '__main__':
     path = []
     size = 250
     goal = (int(sys.argv[1]), int(sys.argv[2]))
-    start = Point(80, 100, goal)
+    start = Point(80, 30, goal)
     bmap = pickle.load(open('/tmp/dualism_map_file.p', 'rb'))
     fmap = bmap
     t0 = time.time_ns()
     point = a_star(bmap, start, goal)
     tend = time.time_ns()
     print("A* took {} ns".format(tend-t0))
-    while True:
-        if point.x == start.x and point.y == start.y:
-            break
-        path.append((point.x, point.y))
-        fmap[point.x][point.y] = 2
-        # print("path {} {}".format(point.x, point.y))
-        point = point.parent
-    # pickle.dump(fmap, open('/tmp/map_file.p', 'wb'))
-    pickle.dump(tuple(path), open('/tmp/path_file.p', 'wb'))    
+
+    pickle.dump(reconstruct_path(point, start), open('/tmp/path_file.p', 'wb'))    
