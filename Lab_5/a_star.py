@@ -6,6 +6,7 @@ from numba import int32, float64, deferred_type, optional
 from numba import jit, typeof
 import time
 import pickle
+import sys
 
 
 node_type = deferred_type()
@@ -95,9 +96,12 @@ def a_star(binary_map, start, goal):
 
 
 if __name__ == '__main__':
+    if(len(sys.argv) != 3):
+        print('Incorrect number of arguments: {}'.format(len(sys.argv)))
+    print('Goal is set to: (x=' + str(sys.argv[1]) +',y='+str(sys.argv[2])+')')
     path = []
     size = 250
-    goal = (90, 110)
+    goal = (int(sys.argv[1]), int(sys.argv[2]))
     start = Point(80, 100, goal)
     bmap = pickle.load(open('/tmp/dualism_map_file.p', 'rb'))
     fmap = bmap
