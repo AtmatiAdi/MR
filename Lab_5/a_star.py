@@ -57,43 +57,63 @@ class Point():
                 if self.priority >= point.priority:
                     return True
         return False
+        
+class PathFinder():
+    def find_path(self,start_x, start_y, target_x, target_y):
+        path = []
+        size = 250
+        goal = (target_x, target_y)
+        start = Point(int(start_x), int(start_y), goal)
+        bmap = pickle.load(open('/tmp/dualism_map_file.p', 'rb'))
+        fmap = bmap
+        t0 = time.time_ns()
+        point = self.a_star(bmap, start, goal)
+        tend = time.time_ns()
+        print("A* took {} ns".format(tend-t0))
+        while True:
+            if point.x == start.x and point.y == start.y:
+                break
+            path.append((point.x, point.y))
+            fmap[point.x][point.y] = 2
+            # print("path {} {}".format(point.x, point.y))
+            point = point.parent
+        # pickle.dump(fmap, open('/tmp/map_file.p', 'wb'))
+        pickle.dump(tuple(path), open('/tmp/path_file.p', 'wb'))    
 
+    # @jit(nopython=True)
+    def a_star(self, binary_map, start, goal):
+        open_queue = PriorityQueue()
+        open_list = []
+        closed_list = []
 
+        open_queue.put(start)
+        open_list.append(start)
+
+        while not open_queue.empty():
+            q = open_queue.get()
+            open_list.remove(q)
+            for point in q.neighbours(goal):
+                if point.x == goal[0] and point.y == goal[1]:
+                    return point
+
+                if binary_map[point.x][point.y] > 0:
+                    continue
+
+                if open_list:
+                    if point.is_part_of(open_list):
+                        continue
+
+                if closed_list:                
+                    if point.is_part_of(closed_list):
+                        continue
+
+                open_queue.put(point)
+                open_list.append(point)
+            closed_list.append(q)
+        raise NoPathError
+        
+        
 # node_type.define(Point.class_type.instance_type)
-
-
-# @jit(nopython=True)
-def a_star(binary_map, start, goal):
-    open_queue = PriorityQueue()
-    open_list = []
-    closed_list = []
-
-    open_queue.put(start)
-    open_list.append(start)
-
-    while not open_queue.empty():
-        q = open_queue.get()
-        open_list.remove(q)
-        for point in q.neighbours(goal):
-            if point.x == goal[0] and point.y == goal[1]:
-                return point
-
-            if binary_map[point.x][point.y] > 0:
-                continue
-
-            if open_list:
-                if point.is_part_of(open_list):
-                    continue
-
-            if closed_list:                
-                if point.is_part_of(closed_list):
-                    continue
-
-            open_queue.put(point)
-            open_list.append(point)
-        closed_list.append(q)
-    raise NoPathError
-
 
 if __name__ == '__main__':
     if(len(sys.argv) != 3):

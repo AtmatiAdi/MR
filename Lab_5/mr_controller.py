@@ -14,6 +14,7 @@ import sys
 import threading
 import time
 import queue
+from a_star import PathFinder
 
 
 class RobotController:
@@ -187,6 +188,8 @@ class RobotController:
                         command = ""
                         buff = ""
                         print('>> Target point is set to: (x=' + str(target_x) +',y='+str(target_y)+')')
+                        pathFinder = PathFinder()
+                        pathFinder.find_path(self.robot_x, self.robot_y,target_x, target_y)
                         print('>> ', end='', flush=True)
                     else:
                         if((buff == "set target") or (buff == "st")):
