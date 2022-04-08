@@ -4,11 +4,14 @@ import time
 import pickle
 from os.path import exists
 
-path_file = '/tmp/path_file.p'
+
 
 def show_map():
+    path_line_plot = None
+    path_file = '/tmp/path_file.p'    
     fig, ax = plt.subplots()        
     grid_map = pickle.load(open('/tmp/map_file.p', 'rb'))
+
     ax.imshow(grid_map, interpolation="nearest", cmap='Blues')
     # ax.colorbar()
     plt.draw()
@@ -18,8 +21,13 @@ def show_map():
         ax.imshow(grid_map, interpolation="nearest", cmap='Blues')
 
         if exists(path_file):
-            path = pickle.load(open(path_file, 'rb'))        
-            ax.plot([p[1] for p in path], [p[0] for p in path])
+            if path_line_plot:
+                ax.lines.pop()
+            path = pickle.load(open(path_file, 'rb'))
+
+            # path changes color every 2 seconds, it's not a bug, it's a feature!
+            path_line_plot = ax.plot([p[1] for p in path], [p[0] for p in path]# , color='C0' 
+            )
 
         plt.draw()
         plt.pause(2)
