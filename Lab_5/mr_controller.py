@@ -64,7 +64,9 @@ class RobotController:
             msg.pose.pose.orientation.w)
         self.robot_th = euler_from_quaternion(quaternion)[2]
         self.goal = (120, 75)
-
+        pickle.dump(self.goal, open('/tmp/goal_file.p', 'wb'))        
+        pickle.dump((real2cord(self.robot_x), real2cord(self.robot_y), self.robot_th), open('/tmp/robot_file.p', 'wb'))
+        
         #print("Robot: {} {} {}".format(self.robot_x, self.robot_y, self.robot_th))
 
     def calc_pixel(self, hit, i):
@@ -168,7 +170,7 @@ class RobotController:
             if self.duailsm_map[int(point[0])][int(point[1])] > 0:
                 return False
 
-        pickle.dump(self.path, open('/tmp/path_file.p', 'wb'))            
+        pickle.dump(self.path, open('/tmp/path_file.p', 'wb'))
         return True
 
     def drive(self):
