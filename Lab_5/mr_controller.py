@@ -63,9 +63,9 @@ class RobotController:
             msg.pose.pose.orientation.z,
             msg.pose.pose.orientation.w)
         self.robot_th = euler_from_quaternion(quaternion)[2]
-        self.goal = (120, 75)
+        self.goal = (40, 80)
         pickle.dump(self.goal, open('/tmp/goal_file.p', 'wb'))        
-        pickle.dump((real2cord(self.robot_x), real2cord(self.robot_y), self.robot_th), open('/tmp/robot_file.p', 'wb'))
+        pickle.dump(self.get_robot_cords(), open('/tmp/robot_file.p', 'wb'))
         
         #print("Robot: {} {} {}".format(self.robot_x, self.robot_y, self.robot_th))
 
@@ -204,31 +204,24 @@ class RobotController:
     def start(self):
         print("RobotController >> STARTED")
         while True:
-            try:
-                if self.goal and self.duailsm_map is not None and self.robot_th is not None:
-                    print("Goal exists")
-                    if self.goal[0] != self.robot_x and self.goal[1] != self.robot_y:
-                        if self.verify_path():
-                            print("Path correct")
-                            self.drive()
-                            self.discard_visited()
+            if self.goal and self.duailsm_map is not None and self.robot_th is not None:
+                print("Goal exists")
+                if self.goal[0] != self.robot_x and self.goal[1] != self.robot_y:
+                    if self.verify_path():
+                        print("Path correct")
+                        self.drive()
+                        self.discard_visited()
+                    else:
+                        print("Path incorrect!!!")
+                        a_star_res = a_star(self.duailsm_map, Point(*self.get_robot_cords(), self.goal), self.goal)
+                        if a_star_res is not None:
+                            self.path = reconstruct_path(a_star_res, Point(*self.get_robot_cords(), self.goal))
+
                         else:
-                            print("Path incorrect!!!")                            
-                            self.path = reconstruct_path(
-                                a_star(self.duailsm_map, Point(*self.get_robot_cords(), self.goal), self.goal),
-                                Point(*self.get_robot_cords(), self.goal))
-
-            except NoPathError:
-                print("Path from {} {} to {} {} doesnt exist!!!".format(*self.get_robot_cords(), *self.goal))
-                twist = Twist()
-                twist.linear.x = 0
-                twist.angular.z = 0.5
-                self.pub.publish(twist)
-
-            # finally:
-            #     twist = Twist()
-            #     twist.linear.x = 0
-            #     twist.angular.z = 0
-            #     self.pub.publish(twist)
+                            print("Path from {} {} to {} {} doesnt exist!!!".format(*self.get_robot_cords(), *self.goal))
+                            twist = Twist()
+                            twist.linear.x = 0
+                            twist.angular.z = 0.5
+                            self.pub.publish(twist)
                 
         rospy.spin()
