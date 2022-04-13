@@ -97,6 +97,8 @@ def a_star(binary_map, start, goal):
 def reconstruct_path(point, start):
     path = []
     while True:
+        print(point.x)
+        print(start.x)
         if point.x == start.x and point.y == start.y:
             break
         path.append((point.x, point.y))

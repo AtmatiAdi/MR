@@ -12,11 +12,11 @@ import time
 import pickle
 from a_star import a_star, reconstruct_path, NoPathError, Point
 from geometry_msgs.msg import Twist
-
+from absoluteangle import PioneerAngle
 
 Kp = 0.5
-ang_err_tol = 0.1
-pos_err_tol = 0.1
+ang_err_tol = 0.05
+pos_err_tol = 4
 
 
 def real2cord(real):
@@ -30,6 +30,8 @@ class RobotController:
         self.grid_map = None
         self.robot_x = None
         self.robot_y = None
+        self.robot_cord_x = None
+        self.robot_cord_y = None        
         self.robot_th = None
         self.duailsm_map = None
         self.path = None
@@ -62,8 +64,11 @@ class RobotController:
             msg.pose.pose.orientation.y,
             msg.pose.pose.orientation.z,
             msg.pose.pose.orientation.w)
-        self.robot_th = euler_from_quaternion(quaternion)[2]
-        self.goal = (40, 80)
+        self.robot_th = PioneerAngle(euler_from_quaternion(quaternion)[2])
+        (x, y) = self.get_robot_cords()
+        self.robot_cord_y = y
+        self.robot_cord_x = x        
+        self.goal = (80, 80)
         pickle.dump(self.goal, open('/tmp/goal_file.p', 'wb'))        
         pickle.dump(self.get_robot_cords(), open('/tmp/robot_file.p', 'wb'))
         
@@ -71,10 +76,10 @@ class RobotController:
 
     def calc_pixel(self, hit, i):
         x = int(self.origin + self.robot_x*10\
-            + np.cos(self.robot_th+(i)*np.pi/512-np.pi/2)*hit*10)
+            + np.cos(self.robot_th.val+PioneerAngle((i)*np.pi/512-np.pi/2).val)*hit*10)                
             #+ np.cos((i)*np.pi/512)*hit*10)
         y = int(self.origin + self.robot_y*10\
-            + np.sin(self.robot_th+(i)*np.pi/512-np.pi/2)*hit*10)
+            + np.sin(self.robot_th.val+PioneerAngle((i)*np.pi/512-np.pi/2).val)*hit*10)
             #+ np.sin((i)*np.pi/512)*hit*10)
         if x < 0 or x > self.grid_size or y < 0 or y > self.grid_size:
             return None
@@ -174,19 +179,20 @@ class RobotController:
         return True
 
     def drive(self):
-        print("arctan2 = {}".format(np.arctan2(self.path[0][1]-self.robot_y, self.path[0][0]-self.robot_x)))
-        print("t_th = {}".format(self.robot_th))
+        print("arctan2 = {}".format(np.arctan2(self.path[0][1]-self.robot_cord_y, self.path[0][0]-self.robot_cord_x)))
+        print("t_th = {}".format(self.robot_th.val))
         
-        err = np.arctan2(self.path[0][1]-self.robot_y, self.path[0][0]-self.robot_x) - self.robot_th
-        err = err -np.pi
+        err = PioneerAngle(np.arctan2(self.path[0][1]-self.robot_cord_y, self.path[0][0]-self.robot_cord_x)) - self.robot_th #+ PioneerAngle(np.pi)
+
         twist = Twist()
-        if abs(err) < ang_err_tol:
+        if err.abs() < ang_err_tol:
+            print("Robot is at {} {} and going to point {} {}".format(self.robot_cord_x, self.robot_cord_y, self.path[0][0], self.path[0][1]))
             twist.angular.z = 0
             twist.linear.x = 0.1
         else:
-            twist.angular.z = Kp * err
+            twist.angular.z = Kp * err.val
             twist.linear.x = 0
-            print("z = {}, err = {}".format(twist.angular.z, err))
+            print("z = {}, err = {}".format(twist.angular.z, err.val))
         self.pub.publish(twist)
     
     def get_map(self):
@@ -194,10 +200,19 @@ class RobotController:
         return self.grid_map
 
     def discard_visited(self):
-        if abs(self.path[0][0] - self.robot_x) < pos_err_tol and\
-           abs(self.path[0][1] - self.robot_y) < pos_err_tol:
+        print("path length: {}".format(len(self.path)))
+        num = 0
+        for point in self.path:
+            if abs(point[0] - self.robot_cord_x) < pos_err_tol and\
+               abs(point[1] - self.robot_cord_y) < pos_err_tol:
+                num += 1
+            else:
+                break
+            
+        for i in range(num):
             self.path.pop()
-
+        
+        
     def get_robot_cords(self):
         return(self.origin + real2cord(self.robot_x), self.origin + real2cord(self.robot_y))
         
@@ -206,11 +221,15 @@ class RobotController:
         while True:
             if self.goal and self.duailsm_map is not None and self.robot_th is not None:
                 print("Goal exists")
-                if self.goal[0] != self.robot_x and self.goal[1] != self.robot_y:
+                if abs(self.goal[0] - self.robot_cord_x) > pos_err_tol and abs(self.goal[1] - self.robot_cord_y) < pos_err_tol:
+                    print("Goal reached!")
+                else:                    
                     if self.verify_path():
                         print("Path correct")
                         self.drive()
                         self.discard_visited()
+                        pickle.dump(self.path, open('/tmp/path_file.p', 'wb'))        
+
                     else:
                         print("Path incorrect!!!")
                         a_star_res = a_star(self.duailsm_map, Point(*self.get_robot_cords(), self.goal), self.goal)

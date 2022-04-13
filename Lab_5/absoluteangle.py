@@ -27,3 +27,7 @@ class PioneerAngle():
 
     def __add__(self, other):
         return PioneerAngle(self.val + other.val)
+
+    def abs(self):
+        return abs(self.val)
+    

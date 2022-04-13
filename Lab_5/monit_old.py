@@ -24,14 +24,12 @@ def show_map():
             grid_map = pickle.load(open('/tmp/map_file.p', 'rb'))
             ax.imshow(grid_map, interpolation="nearest", cmap='Blues')
 
-            # if exists(path_file):
-            #     if path_line_plot:
-            #         ax.lines.pop()
-            #     path = pickle.load(open(path_file, 'rb'))
+            if exists(path_file):
+                path = pickle.load(open(path_file, 'rb'))
 
-            #     # path changes color every 2 seconds, it's not a bug, it's a feature!
-            #     path_line_plot = ax.plot([p[1] for p in path], [p[0] for p in path]# , color='C0' 
-            #     )
+                # path changes color every 2 seconds, it's not a bug, it's a feature!
+                path_line_plot = ax.plot([p[1] for p in path], [p[0] for p in path]# , color='C0' 
+                )
 
             if exists(robot_file):
                 robot_pos = pickle.load(open(robot_file, 'rb'))
@@ -44,7 +42,7 @@ def show_map():
 
             plt.draw()
             plt.pause(2)
-        except EOFError:
+        except (EOFError):
             print('Ran out of input, skipping')
             time.sleep(0.1)
             continue
