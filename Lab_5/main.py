@@ -8,6 +8,6 @@ if __name__ == "__main__":
     # #print(data)
     # scan = data[2]['scan']
  
-    ctrl = RobotController(150, 2)
+    ctrl = RobotController(150, 6)
     # ctrl.init_map(scan)
     ctrl.start()

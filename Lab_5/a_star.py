@@ -92,7 +92,7 @@ def a_star(binary_map, start, goal):
             open_queue.put(point)
             open_list.append(point)
         closed_list.append(q)
-    raise NoPathError
+    return None
 
 def reconstruct_path(point, start):
     path = []
