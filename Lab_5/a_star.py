@@ -95,15 +95,17 @@ def a_star(binary_map, start, goal):
     return None
 
 def reconstruct_path(point, start):
-    path = []
-    while True:
-        print(point.x)
-        print(start.x)
-        if point.x == start.x and point.y == start.y:
-            break
-        path.append((point.x, point.y))
-        point = point.parent        
-    return path
+    try:
+        path = []
+        while True:
+            if point.x == start.x and point.y == start.y:
+                break
+            path.append((point.x, point.y))
+            point = point.parent        
+        return path
+    except AttributeError:
+        print("start is: {} {}".format(*start))
+        print("computed point is: {} {}".format(*point))        
 
 
 if __name__ == '__main__':

@@ -36,6 +36,7 @@ class RobotController:
         self.duailsm_map = None
         self.path = None
         self.goal = None
+        self.subgoal = None        
 
         rospy.init_node('listener', anonymous=True)
         rospy.Subscriber("/PIONIER"+str(nr)+"/scan",
@@ -69,6 +70,7 @@ class RobotController:
         self.robot_cord_y = y
         self.robot_cord_x = x        
         self.goal = (80, 80)
+        self.subgoal = self.goal
         pickle.dump(self.goal, open('/tmp/goal_file.p', 'wb'))        
         pickle.dump(self.get_robot_cords(), open('/tmp/robot_file.p', 'wb'))
         
@@ -221,6 +223,8 @@ class RobotController:
         while True:
             if self.goal and self.duailsm_map is not None and self.robot_th is not None:
                 print("Goal exists")
+                if abs(self.subgoal[0] - self.robot_cord_x) > pos_err_tol and abs(self.subgoal[1] - self.robot_cord_y) < pos_err_tol:
+                    self.subgoal = self.goal
                 if abs(self.goal[0] - self.robot_cord_x) > pos_err_tol and abs(self.goal[1] - self.robot_cord_y) < pos_err_tol:
                     print("Goal reached!")
                 else:                    
@@ -232,12 +236,13 @@ class RobotController:
 
                     else:
                         print("Path incorrect!!!")
-                        a_star_res = a_star(self.duailsm_map, Point(*self.get_robot_cords(), self.goal), self.goal)
+                        a_star_res = a_star(self.duailsm_map, Point(*self.get_robot_cords(), self.subgoal), self.subgoal)
                         if a_star_res is not None:
-                            self.path = reconstruct_path(a_star_res, Point(*self.get_robot_cords(), self.goal))
+                            self.path = reconstruct_path(a_star_res, Point(*self.get_robot_cords(), self.subgoal))
 
                         else:
-                            print("Path from {} {} to {} {} doesnt exist!!!".format(*self.get_robot_cords(), *self.goal))
+                            print("Path from {} {} to {} {} doesnt exist!!!".format(*self.get_robot_cords(), *self.subgoal))
+                            self.subgoal = ((self.subgoal[0]+self.robot_cord_x)//2, (self.subgoal[1]+self.robot_cord_y)//2)
                             twist = Twist()
                             twist.linear.x = 0
                             twist.angular.z = 0.5
