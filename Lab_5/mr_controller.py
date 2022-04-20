@@ -16,7 +16,7 @@ from absoluteangle import PioneerAngle
 
 Kp = 0.5
 ang_err_tol = 0.05
-pos_err_tol = 4
+pos_err_tol = 3
 
 
 def real2cord(real):
@@ -43,7 +43,7 @@ class RobotController:
                          LaserScan, self.callback_scan, queue_size=1)
         rospy.Subscriber("/PIONIER"+str(nr)+"/RosAria/pose",
                          Odometry, self.callback_position, queue_size=1)
-        self.pub = rospy.Publisher('/PIONIER'+str(nr)+'/RosAria/cmd_vel', Twist)
+        self.pub = rospy.Publisher("safety_xbox_control", Twist)
 
     def callback_scan(self, msg):
         scans = list(msg.ranges)
@@ -69,7 +69,7 @@ class RobotController:
         (x, y) = self.get_robot_cords()
         self.robot_cord_y = y
         self.robot_cord_x = x        
-        self.goal = (80, 80)
+        self.goal = (80, 60)
         self.subgoal = self.goal
         pickle.dump(self.goal, open('/tmp/goal_file.p', 'wb'))        
         pickle.dump(self.get_robot_cords(), open('/tmp/robot_file.p', 'wb'))
@@ -236,13 +236,12 @@ class RobotController:
 
                     else:
                         print("Path incorrect!!!")
-                        a_star_res = a_star(self.duailsm_map, Point(*self.get_robot_cords(), self.subgoal), self.subgoal)
+                        a_star_res = a_star(self.duailsm_map, Point(*self.get_robot_cords(), self.goal), self.goal)
                         if a_star_res is not None:
-                            self.path = reconstruct_path(a_star_res, Point(*self.get_robot_cords(), self.subgoal))
+                            self.path = reconstruct_path(a_star_res, Point(*self.get_robot_cords(), self.goal))
 
                         else:
-                            print("Path from {} {} to {} {} doesnt exist!!!".format(*self.get_robot_cords(), *self.subgoal))
-                            self.subgoal = ((self.subgoal[0]+self.robot_cord_x)//2, (self.subgoal[1]+self.robot_cord_y)//2)
+                            print("Path from {} {} to {} {} doesnt exist!!!".format(*self.get_robot_cords(), *self.goal))
                             twist = Twist()
                             twist.linear.x = 0
                             twist.angular.z = 0.5
